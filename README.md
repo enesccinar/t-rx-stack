@@ -15,6 +15,7 @@ npx create-remix@latest --template enesccinar/t-rx-stack
 - Healthcheck endpoint for [Fly backups region fallbacks](https://fly.io/docs/reference/configuration/#services-http_checks)
 - [GitHub Actions](https://github.com/features/actions) for deploy on merge to production and staging environments
 - Email/Password Authentication with [cookie-based sessions](https://remix.run/docs/en/v1/api/remix#createcookiesessionstorage)
+- [Google Auth](https://www.npmjs.com/package/remix-auth-google)
 - Database ORM with [Prisma](https://prisma.io)
 - Styling with [Tailwind](https://tailwindcss.com/)
 - End-to-end testing with [Cypress](https://cypress.io)
@@ -32,13 +33,19 @@ Click this button to create a [Gitpod](https://gitpod.io) workspace with the pro
 
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/remix-run/blues-stack/tree/main)
 
+## Authentication
+
+Follow the steps on [the Google documentation](https://developers.google.com/identity/protocols/oauth2/web-server#creatingcred) to create a new application and get a client ID and secret.
+
+- Put the `client id` and the `client secret` into the `.env` file.
+
 ## Development
 
 - This step only applies if you've opted out of having the CLI install dependencies for you:
 
-   ```sh
-   npx remix init
-   ```
+  ```sh
+  npx remix init
+  ```
 
 - Start the Postgres Database in [Docker](https://www.docker.com/get-started):
 
@@ -53,6 +60,8 @@ Click this button to create a [Gitpod](https://gitpod.io) workspace with the pro
   ```sh
   npm run setup
   ```
+
+  > **Note:** Before running this command, create an `.env` file and copy the example into it. If you didn't change the db credentials in the `docker-compose.yml` get the password from it, and paste it into the `.env` file.
 
 - Run the first build:
 
@@ -102,10 +111,10 @@ Prior to your first deployment, you'll need to do a few things:
 - Create two apps on Fly, one for staging and one for production:
 
   ```sh
-  fly apps create blues-stack-template
-  fly apps create blues-stack-template-staging
+  fly apps create t-rx-stack-cba1
+  fly apps create t-rx-stack-cba1-staging
   ```
-  
+
   > **Note:** Once you've successfully created an app, double-check the `fly.toml` file to ensure that the `app` key is the name of the production app you created. This Stack [automatically appends a unique suffix at init](https://github.com/remix-run/blues-stack/blob/4c2f1af416b539187beb8126dd16f6bc38f47639/remix.init/index.js#L29) which may not match the apps you created on Fly. You will likely see [404 errors in your Github Actions CI logs](https://community.fly.io/t/404-failure-with-deployment-with-remix-blues-stack/4526/3) if you have this mismatch.
 
 - Initialize Git.
@@ -125,14 +134,14 @@ Prior to your first deployment, you'll need to do a few things:
 - Add a `SESSION_SECRET` to your fly app secrets, to do this you can run the following commands:
 
   ```sh
-  fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app blues-stack-template
-  fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app blues-stack-template-staging
+  fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app t-rx-stack-cba1
+  fly secrets set SESSION_SECRET=$(openssl rand -hex 32) --app t-rx-stack-cba1-staging
   ```
 
   > **Note:** When creating the staging secret, you may get a warning from the Fly CLI that looks like this:
   >
   > ```
-  > WARN app flag 'blues-stack-template-staging' does not match app name in config file 'blues-stack-template'
+  > WARN app flag 't-rx-stack-cba1-staging' does not match app name in config file 't-rx-stack-cba1'
   > ```
   >
   > This simply means that the current directory contains a config that references the production app we created in the first step. Ignore this warning and proceed to create the secret.
@@ -142,11 +151,11 @@ Prior to your first deployment, you'll need to do a few things:
 - Create a database for both your staging and production environments. Run the following:
 
   ```sh
-  fly postgres create --name blues-stack-template-db
-  fly postgres attach --app blues-stack-template blues-stack-template-db
+  fly postgres create --name t-rx-stack-cba1-db
+  fly postgres attach --app t-rx-stack-cba1 t-rx-stack-cba1-db
 
-  fly postgres create --name blues-stack-template-staging-db
-  fly postgres attach --app blues-stack-template-staging blues-stack-template-staging-db
+  fly postgres create --name t-rx-stack-cba1-staging-db
+  fly postgres attach --app t-rx-stack-cba1-staging t-rx-stack-cba1-staging-db
   ```
 
   > **Note:** You'll get the same warning for the same reason when attaching the staging database that you did in the `fly set secret` step above. No worries. Proceed!
